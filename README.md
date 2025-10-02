@@ -25,3 +25,14 @@ Client mode (connect to router).
 Access Point mode (web interface for setup & GPIO control).
 
 ✅ Logs stored in SPIFFS (JSON/text) with timestamp via NTP.
+
+
+├── main.cpp              → Application entry point (system init, logic)
+├── MRC522Manager.*       → RFID card operations (UID, balance, lock, numbers)
+├── ScreenManager.*       → LCD + keypad UI, menus, recharge, home page
+├── LogManager.*          → Logging system (SPIFFS + NTP timestamps)
+├── WiFiManager.*         → Wi-Fi client/AP, web server for configuration
+├── TimeManager.*         → NTP time synchronization
+├── ConfigManager.*       → Persistent configuration storage
+├── BuzzerManager.*       → Audio feedback (success/error tones)
+
