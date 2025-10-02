@@ -1,0 +1,270 @@
+#include <Keypad.h>
+#include <Arduino.h>
+
+const byte ROW_NUM = 4; // Four rows
+const byte COLUMN_NUM = 3; // Three columns
+
+// Define the keymap for the 4x3 matrix keypad
+char keys[ROW_NUM][COLUMN_NUM] = {
+    {'1', '2', '3'},  // 1: A, B, C
+    {'4', '5', '6'},  // 4: D, E, F
+    {'7', '8', '9'},  // 7: G, H, I
+    {'*', '0', '#'}   // *: Special, 0: Space, #: Special
+};
+
+// Define the pin connections
+byte rowPins[ROW_NUM] = {9, 8, 7, 6}; // Connect to the row pinouts of the keypad
+byte colPins[COLUMN_NUM] = {5, 4, 3}; // Connect to the column pinouts of the keypad
+
+// Keypad instance
+Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROW_NUM, COLUMN_NUM);
+
+class KeyPadManager {
+public:
+    KeyPadManager(); // Constructor: Initializes the keypad manager
+    char getCharacterFromKey(bool UpLowCase);                 // Retrieves a character based on key presses
+    char get_Character_FR_FromKey(char key, int pressCount); // Overloaded function that returns character based on specific key and press count
+    char get_character_fr_from_key(char key, int press_count);
+    char getKey();                               // Gets the currently pressed key from the keypad
+    char character;
+    char get_CharacterVal();
+};
+
+// Constructor
+KeyPadManager::KeyPadManager() {}
+
+// Get the current key pressed
+char KeyPadManager::getKey() {
+    return keypad.getKey(); // Get the currently pressed key
+}
+
+/**
+ * @brief Gets a character based on key presses from a keypad, with automatic
+ *        exit after 1 second of inactivity unless a button is continuously pressed.
+ * 
+ * @param UpLowCase If true, returns uppercase characters; if false, returns lowercase characters.
+ * @return char The last key character pressed, or 0 if the loop exits due to inactivity.
+ */
+char KeyPadManager::getCharacterFromKey(bool UpLowCase) {
+    char key = 0;                          ///< Current key pressed
+    int pressCount = 0;                    ///< Number of consecutive presses of the same key
+    char lastKey = 0;                      ///< The last key pressed to track consecutive presses
+    unsigned long lastPressTime = 0;       ///< Timestamp of the last key press
+    const unsigned long resetDelay = 400;  ///< Time (in ms) to wait before resetting count if no key is pressed
+    unsigned long StopDelay = millis();    ///< Time to track inactivity for exiting the loop
+
+    while (true) {
+        key = getKey();                    ///< Get the current key pressed
+        unsigned long currentTime = millis(); ///< Current time for timeout checks
+
+        // Check for termination keys
+        if (key == '*' || key == '#') {
+            break; ///< Exit loop if '*' or '#' is pressed
+        }
+
+        if (key != 0) { // If a valid key is pressed
+            //Serial.println("in");
+            StopDelay = millis(); ///< Reset StopDelay due to key press activity
+
+            // Check if the current key matches the last key
+            if (key == lastKey) {
+                pressCount++; ///< Increment count if the same key is pressed again
+            } else {
+                pressCount = 1; ///< Reset count for a new key press
+                lastKey = key;  ///< Update the last key pressed
+            }
+
+            lastPressTime = currentTime; ///< Update the last press timestamp
+
+            // Wait until the key is released (debounce delay)
+            while (getKey() == key) {
+                delay(20); ///< Short delay for debouncing
+            }
+
+             character;
+            // Retrieve the character based on the key and press count
+            if (UpLowCase)
+                character = get_Character_FR_FromKey(lastKey, pressCount);
+            else
+                character = get_character_fr_from_key(lastKey, pressCount);
+
+            
+        } else {
+            // Reset press count if no valid key is pressed within the reset delay
+            if (currentTime - lastPressTime >= resetDelay) {
+                pressCount = 0; ///< Reset press count
+                lastKey = 0;    ///< Clear last key
+            }
+        }
+
+        // Exit the loop if no key press activity has occurred for 1 second
+        if (millis() - StopDelay >= 1000) {
+            pressCount = 0; ///< Reset press count
+            lastKey = 0;    ///< Clear last key
+           // Serial.println("Out");
+            break; ///< Exit loop due to inactivity
+        }
+
+        delay(50); ///< Short delay to avoid rapid cycling
+    }
+
+    return lastKey; ///< Return the last key pressed, or 0 if none
+}
+
+char KeyPadManager::get_CharacterVal(){
+  char Output = character;
+  character = NO_KEY;
+  if(Output!= NO_KEY) Serial.print(Output); ///< Print the character for debug/output
+return Output; 
+}
+
+/**
+ * @brief Returns the corresponding character for a given key and press count.
+ *
+ * This function returns alphanumeric characters based on the number of times a key is pressed.
+ *
+ * @param key The key pressed.
+ * @param pressCount The number of times the key has been pressed.
+ * @return The corresponding character or 0 for an invalid key.
+ */
+char KeyPadManager::get_Character_FR_FromKey(char key, int pressCount) {
+    // Adjust pressCount to cycle through 0-3 for the defined characters
+    int adjustedCount = (pressCount - 1) % 4;
+
+    switch (key) {
+        case '2':
+            return adjustedCount == 0 ? 'A' :
+                   adjustedCount == 1 ? 'B' :
+                   adjustedCount == 2 ? 'C' :
+                   '2'; // For count 3
+        case '3':
+            return adjustedCount == 0 ? 'D' :
+                   adjustedCount == 1 ? 'E' :
+                   adjustedCount == 2 ? 'F' :
+                   '3'; // For count 3
+        case '4':
+            return adjustedCount == 0 ? 'G' :
+                   adjustedCount == 1 ? 'H' :
+                   adjustedCount == 2 ? 'I' :
+                   '4'; // For count 3
+        case '5':
+            return adjustedCount == 0 ? 'J' :
+                   adjustedCount == 1 ? 'K' :
+                   adjustedCount == 2 ? 'L' :
+                   '5'; // For count 3
+        case '6':
+            return adjustedCount == 0 ? 'M' :
+                   adjustedCount == 1 ? 'N' :
+                   adjustedCount == 2 ? 'O' :
+                   '6'; // For count 3
+        case '7':
+            return adjustedCount == 0 ? 'P' :
+                   adjustedCount == 1 ? 'R' :
+                   adjustedCount == 2 ? 'S' :
+                   '7'; // For count 3
+        case '8':
+            return adjustedCount == 0 ? 'T' :
+                   adjustedCount == 1 ? 'U' :
+                   adjustedCount == 2 ? 'V' :
+                   '8'; // For count 3
+        case '9':
+            return adjustedCount == 0 ? 'W' :
+                   adjustedCount == 1 ? 'X' :
+                   adjustedCount == 2 ? 'Y' :
+                   '9'; // For count 3
+        case '0':
+            return adjustedCount == 0 ? ' ' : // Space
+                   adjustedCount == 1 ? 'Q' :
+                   adjustedCount == 2 ? '0' :
+                   '0'; // For count 3 (remains 0)
+        case '*':
+            return '*'; // Special character
+        case '#':
+            return '#'; // Special character
+        default:
+            return 0; // Invalid key
+    }
+}
+
+/**
+ * @brief Returns the corresponding character for a given key and press count.
+ *
+ * This function returns alphanumeric characters based on the number of times a key is pressed.
+ *
+ * @param key The key pressed.
+ * @param press_count The number of times the key has been pressed.
+ * @return The corresponding character or 0 for an invalid key.
+ */
+char KeyPadManager::get_character_fr_from_key(char key, int press_count) {
+    // Adjust press_count to cycle through 0-3 for the defined characters
+    int adjusted_count = (press_count - 1) % 4;
+
+    switch (key) {
+        case '2':
+            return adjusted_count == 0 ? 'a' :
+                   adjusted_count == 1 ? 'b' :
+                   adjusted_count == 2 ? 'c' :
+                   '2'; // For count 3
+        case '3':
+            return adjusted_count == 0 ? 'd' :
+                   adjusted_count == 1 ? 'e' :
+                   adjusted_count == 2 ? 'f' :
+                   '3'; // For count 3
+        case '4':
+            return adjusted_count == 0 ? 'g' :
+                   adjusted_count == 1 ? 'h' :
+                   adjusted_count == 2 ? 'i' :
+                   '4'; // For count 3
+        case '5':
+            return adjusted_count == 0 ? 'j' :
+                   adjusted_count == 1 ? 'k' :
+                   adjusted_count == 2 ? 'l' :
+                   '5'; // For count 3
+        case '6':
+            return adjusted_count == 0 ? 'm' :
+                   adjusted_count == 1 ? 'n' :
+                   adjusted_count == 2 ? 'o' :
+                   '6'; // For count 3
+        case '7':
+            return adjusted_count == 0 ? 'p' :
+                   adjusted_count == 1 ? 'r' :
+                   adjusted_count == 2 ? 's' :
+                   '7'; // For count 3
+        case '8':
+            return adjusted_count == 0 ? 't' :
+                   adjusted_count == 1 ? 'u' :
+                   adjusted_count == 2 ? 'v' :
+                   '8'; // For count 3
+        case '9':
+            return adjusted_count == 0 ? 'w' :
+                   adjusted_count == 1 ? 'x' :
+                   adjusted_count == 2 ? 'y' :
+                   '9'; // For count 3
+
+        case '0':
+            return adjusted_count == 0 ? ' ' : // Space
+                   adjusted_count == 1 ? 'q' :
+                   adjusted_count == 2 ? '0' :
+                   '0'; // For count 3 (remains 0)
+        case '*':
+            return '*'; // Special character
+        case '#':
+            return '#'; // Special character
+        default:
+            return 0; // Invalid key
+    }
+}
+
+
+// KeyPadManager instance
+KeyPadManager keypadManager; 
+
+void setup() {
+    Serial.begin(9600); // Initialize serial communication at 9600 baud
+    Serial.println(F("Keypad Alphanumeric Input Example"));
+}
+
+void loop() {
+  keypadManager.getCharacterFromKey(0);
+  keypadManager.get_CharacterVal();        
+}

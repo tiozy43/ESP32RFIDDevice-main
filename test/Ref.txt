@@ -1,0 +1,80 @@
+#include <Arduino.h>
+#include <MFRC522.h>
+#include <SPI.h>
+
+#define SS_PIN 5
+#define RST_PIN 0
+
+// Function prototypes
+void readRFID();                     // Function to read RFID card data
+void printHex(byte* buffer, byte bufferSize); // Print byte array in hexadecimal format
+void printDec(byte* buffer, byte bufferSize); // Print byte array in decimal format
+
+// Global variables
+byte nuidPICC[4] = {0, 0, 0, 0};
+MFRC522::MIFARE_Key key;
+MFRC522 rfid = MFRC522(SS_PIN, RST_PIN);
+
+// Function to read RFID card data
+void readRFID() {
+    // Prepare key
+    for (byte i = 0; i < 6; i++) {
+        key.keyByte[i] = 0xFF;
+    }
+
+    // Look for new cards
+    if (!rfid.PICC_IsNewCardPresent())
+        return;
+
+    // Check if we can read the card serial number
+    if (!rfid.PICC_ReadCardSerial())
+        return;
+
+    // Store the UID in nuidPICC array
+    for (byte i = 0; i < 4; i++) {
+        nuidPICC[i] = rfid.uid.uidByte[i];
+    }
+
+    Serial.print(F("RFID in dec: "));
+    printDec(rfid.uid.uidByte, rfid.uid.size);  // Call to helper function
+    Serial.println();
+
+    // Halt PICC
+    rfid.PICC_HaltA();
+
+    // Stop encryption on PCD
+    rfid.PCD_StopCrypto1();
+}
+
+// Helper function to print byte array in hexadecimal format
+void printHex(byte* buffer, byte bufferSize) {
+    for (byte i = 0; i < bufferSize; i++) {
+        Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+        Serial.print(buffer[i], HEX);
+    }
+}
+
+// Helper function to print byte array in decimal format
+void printDec(byte* buffer, byte bufferSize) {
+    for (byte i = 0; i < bufferSize; i++) {
+        Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+        Serial.print(buffer[i], DEC);
+    }
+}
+
+// Setup function to initialize system and RFID reader
+void setup() {
+    Serial.begin(115200);         // Initialize Serial communication
+    Serial.println(F("Initialize System"));
+
+    SPI.begin();                  // Start SPI bus
+    rfid.PCD_Init();              // Initialize RFID reader
+
+    Serial.print(F("Reader: "));
+    rfid.PCD_DumpVersionToSerial();  // Print version information
+}
+
+// Main loop function to continuously check for RFID cards
+void loop() {
+    readRFID();  // Call function to read RFID data
+}

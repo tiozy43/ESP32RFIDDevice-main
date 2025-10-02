@@ -1,0 +1,37 @@
+#include <WiFi.h>
+
+// WiFi 
+const char* ssid = "TOPNET_9BC0";
+const char* password = "EZATEAWA24";
+void setup() {
+    Serial.begin(115200);
+    delay(1000);
+    
+    // Connect to Wi-Fi
+    WiFi.begin(ssid, password);
+    Serial.print("Connecting to WiFi");
+    
+    // Wait for connection
+    while (WiFi.status() != WL_CONNECTED) {
+        Serial.print(".");
+        delay(500);
+    }
+    
+    Serial.println();
+    Serial.print("Connected to WiFi. IP Address: ");
+    Serial.println(WiFi.localIP());
+}
+
+void loop() {
+    // Get the RSSI value
+    int32_t rssi = WiFi.RSSI();
+    // Convert RSSI to percentage
+    int percent = map(rssi, -100, -50, 0, 100);
+    percent = constrain(percent, 0, 100); // Ensure it's within 0-100%
+
+    Serial.print("WiFi Signal Strength: ");
+    Serial.print(percent);
+    Serial.println("%");
+
+    delay(5000); // Wait for 5 seconds before repeating
+}

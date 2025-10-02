@@ -1,0 +1,78 @@
+#include <Arduino.h>
+#include "MRC522Manager.h"
+#include "KeyPadManager.h"
+#include "ScreenManager.h"
+#include "WiFiManager.h"
+
+// Preferences object to store non-volatile data
+Preferences prefs;
+
+// Manager instances for handling different functionalities
+ConfigManager* configManager;
+MRC522Manager* rfidManager;
+KeyPadManager* keyPadManager;
+ScreenManager* screenManager;
+WiFiManager* wifiManager;
+TimeManager* timeManager;
+
+/**
+ * @brief Initializes the Arduino environment and application managers.
+ *
+ * This setup function configures serial communication and initializes
+ * the various manager instances required for device operation. Each
+ * manager is responsible for handling a specific functionality, such as
+ * RFID, keypad input, screen display, and WiFi connectivity. 
+ * The function concludes by displaying the homepage.
+ */
+void setup() {
+    // Initialize serial communication for debugging
+    Serial.begin(115200);
+
+    // Instantiate and initialize managers
+    configManager = new ConfigManager(prefs);         // Manage device configurations
+    wifiManager = new WiFiManager(configManager);     // WiFi manager for connectivity
+    wifiManager->begin();                             // Initialize WiFi manager
+    timeManager = new TimeManager();                  // Manage time-related functions
+    rfidManager = new MRC522Manager(configManager);   // RFID manager for card operations
+    rfidManager->begin();                             // Initialize RFID manager
+
+    keyPadManager = new KeyPadManager();              // Manage keypad inputs
+
+
+    screenManager = new ScreenManager(keyPadManager, wifiManager, timeManager, rfidManager); // Screen manager for display
+    screenManager->begin();                           // Initialize screen manager
+}
+
+/**
+ * @brief Main loop that continuously checks for user input and processes mode selection.
+ *
+ * The loop function primarily checks for card detection. Upon detecting a card, 
+ * it determines if the user has a regular or master card. Based on this validation,
+ * the function navigates to the recharge page or master mode. The main page is reloaded 
+ * after each interaction.
+ */
+void loop() {
+    // Initial security check, requiring the master key to start
+    screenManager->SecurityCheck();
+
+    // Label for returning to the home screen
+    Home:
+
+    // Display the homepage with device manager name and organization details
+    screenManager->HomePage(DEV_MANAGER_NAME, "Avznzar Impex");
+
+    // Monitor for RFID card detection and process accordingly
+    while (true) {
+        if (rfidManager->IsCardDetected()) {
+            // If card is not a master card, load the recharge page
+            if (!rfidManager->masterCardCheck()) {
+                screenManager->RechargePage();
+                goto Home;  // Return to home screen after recharge
+            } else {
+                // If card is a master card, enter master mode
+                screenManager->MasterMode();
+                goto Home;  // Return to home screen after master mode
+            }
+        }
+    }
+}

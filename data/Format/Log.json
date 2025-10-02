@@ -1,0 +1,20 @@
+{
+    "logEntries": [
+      {
+        "timestamp": "2024-12-07T12:34:56",
+        "action": "Recharge",
+        "amount": 50,
+        "balanceAfterRecharge": 200,
+        "cardId": "d3:73:fd:e3",
+        "status": "Success"
+      },
+      {
+        "timestamp": "2024-12-07T13:00:22",
+        "action": "Store Numbers",
+        "cardId": "d3:73:fd:e3",
+        "storedNumbers": ["1234", "5678", "9101", "1121"],
+        "status": "Success"
+      }
+    ]
+  }
+  

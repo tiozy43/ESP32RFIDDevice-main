@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recording Manager</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 150px; /* Fixed width for uniformity */
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .file-list {
+            margin-top: 20px;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .file-item {
+            margin: 5px 0;
+            cursor: pointer; /* Change cursor to pointer for interactivity */
+        }
+
+        .file-item.selected {
+            background-color: #007bff;
+            color: white; /* Change text color for selected item */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Recording Manager</h1>
+        <div class="button-container">
+            <button id="startRecording" onclick="startRecording()"><img src="icons/record-16.png" alt="Record Icon"> Start Recording</button>
+            <button id="stopRecording" onclick="stopRecording()"><img src="icons/stop-16.png" alt="Stop Icon"> Stop Recording</button>
+            <button id="playRecording" onclick="playSelectedRecording()" disabled><img src="icons/play-3-16.png" alt="Play Icon"> Play Selected Recording</button>
+            <button id="pausePlayback" onclick="pausePlayback()"><img src="icons/pause-16.png" alt="Pause Icon"> Pause Playback</button>
+            <button id="pausePlayback" onclick="StopPlayback()"><img src="icons/stop-16.png" alt="Pause Icon"> Stop Playback</button>
+            <button id="resumePlayback" onclick="resumePlayback()"><img src="icons/play-7-16.png" alt="Resume Icon"> Resume Playback</button>
+            <button type="submit" onclick="window.location.href='/'">
+                <img src="icons/arrow-90-16.png" alt="Back Icon"> Back to Welcome
+            </button>
+        </div>
+        
+        <h2>Recorded Files</h2>
+        <div class="file-list" id="fileList"></div>
+    </div>
+
+    <script>
+        let selectedFile = null; // Variable to hold the selected file name
+
+        function startRecording() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/start_recording", true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    alert("Recording started.");
+                } else {
+                    alert("Error starting recording: " + xhr.status);
+                }
+            };
+            xhr.send();
+        }
+
+        function stopRecording() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/stop_recording", true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    alert("Recording stopped.");
+                    loadRecordedFiles(); // Load files after stopping the recording
+                } else {
+                    alert("Error stopping recording: " + xhr.status);
+                }
+            };
+            xhr.send();
+        }
+
+        function playSelectedRecording() {
+            if (!selectedFile) {
+                alert("No file selected.");
+                return;
+            }
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/play_file?file=" + selectedFile, true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var audio = new Audio(xhr.responseText);
+                    audio.play();
+                } else {
+                    alert("Error playing file: " + xhr.status);
+                }
+            };
+            xhr.send();
+        }
+        function StopPlayback() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/stop_playback", true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    alert("Playback paused.");
+                } else {
+                    alert("Error pausing playback: " + xhr.status);
+                }
+            };
+            xhr.send();
+        }
+        function pausePlayback() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/pause_playback", true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    alert("Playback paused.");
+                } else {
+                    alert("Error pausing playback: " + xhr.status);
+                }
+            };
+            xhr.send();
+        }
+
+        function resumePlayback() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/resume_playback", true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    alert("Playback resumed.");
+                } else {
+                    alert("Error resuming playback: " + xhr.status);
+                }
+            };
+            xhr.send();
+        }
+
+        function loadRecordedFiles() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/list_recorded_files", true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var files = JSON.parse(xhr.responseText);
+                    var fileListDiv = document.getElementById("fileList");
+                    fileListDiv.innerHTML = ''; // Clear previous files
+                    files.forEach(function(file) {
+                        var fileItem = document.createElement("div");
+                        fileItem.classList.add("file-item");
+                        fileItem.innerText = file; // Set the displayed file name
+                        fileItem.onclick = function() {
+                            selectFile(fileItem, file); // Call selectFile function on click
+                        };
+                        fileListDiv.appendChild(fileItem);
+                    });
+                } else {
+                    alert("Error loading files: " + xhr.status);
+                }
+            };
+            xhr.send();
+        }
+
+        function selectFile(fileItem, fileName) {
+            // Remove 'selected' class from all file items
+            var items = document.querySelectorAll(".file-item");
+            items.forEach(item => item.classList.remove("selected"));
+
+            // Add 'selected' class to the clicked item and set selectedFile
+            fileItem.classList.add("selected");
+            selectedFile = fileName;
+
+            // Enable play button if a file is selected
+            document.getElementById("playRecording").disabled = false;
+        }
+
+        // Load files on page load
+        window.onload = loadRecordedFiles;
+    </script>
+</body>
+</html>

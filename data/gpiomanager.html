@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 GPIO Control</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background: #efebeb;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(238, 235, 235, 0.4);
+        }
+
+        .container {
+            position: relative;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 600px;
+            padding: 40px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 30px;
+        }
+
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 150px;
+            padding: 10px;
+            margin: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background: #0056b3;
+            color: #ffffff;
+            text-transform: uppercase;
+            transition: background 0.3s, box-shadow 0.3s, transform 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background: #003d7a;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+            transform: scale(1.05);
+        }
+
+        button:active {
+            background: #00274d;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transform: scale(0.98);
+        }
+
+        .led-button {
+            position: relative;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .led-on {
+            background-color: #28a745; /* Green */
+            transform: scale(1.05);
+        }
+
+        .led-off {
+            background-color: #dc3545; /* Red */
+            transform: scale(1);
+        }
+
+        .led-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background-color: #dc3545; /* Initial red color */
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .led-indicator-on {
+            background-color: #28a745; /* Green when on */
+            transform: scale(1.2);
+        }
+
+        .button-state-section {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            background: #f9f9f9;
+            text-align: left;
+        }
+
+        .button-state {
+            margin: 5px 0;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .button-icon {
+            margin-right: 8px;
+            width: 24px; /* Icon width */
+            height: 24px; /* Icon height */
+        }
+
+        .pressed {
+            color: #ff5722; /* Change color on press */
+        }
+
+        .led-state {
+            font-size: 16px;
+            font-weight: normal;
+        }
+
+        .status-icon {
+            margin-right: 10px;
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay"></div>
+    <div class="container">
+        <h1>GPIO Pin Manager</h1>
+        <p>Control LEDs and see button states:</p>
+
+        <div style="display: flex; justify-content: center;">
+            <button class="led-button led-off" id="led1Button" onclick="toggleLED(1)">
+                <span class="led-indicator" id="led1Indicator"></span>
+                Toggle LED 1
+            </button>
+            <button class="led-button led-off" id="led2Button" onclick="toggleLED(2)">
+                <span class="led-indicator" id="led2Indicator"></span>
+                Toggle LED 2
+            </button>
+        </div>
+
+        <div class="button-state-section">
+            <h2>Current Status</h2>
+            <p id="led1" class="button-state"><span class="status-icon">🔴</span>LED 1: <span class="led-state">OFF</span></p>
+            <p id="led2" class="button-state"><span class="status-icon">🔴</span>LED 2: <span class="led-state">OFF</span></p>
+            <h2>Button States</h2>
+            <p id="button1" class="button-state"><span class="status-icon">⬤</span>Button 1: <span class="led-state">Released</span></p>
+            <p id="button2" class="button-state"><span class="status-icon">⬤</span>Button 2: <span class="led-state">Released</span></p>
+        </div>
+        <div>
+            <button type="submit" onclick="window.location.href='/'">
+                <img src="icons/arrow-90-16.png" alt="Back Icon"> Back to Welcome
+            </button>
+        </div>
+    </div>
+    <script>
+        function toggleLED(led) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/set_led?led=" + led, true);
+            xhr.send();
+    
+            // Update button style
+            var ledButton = document.getElementById('led' + led + 'Button');
+            var ledIndicator = document.getElementById('led' + led + 'Indicator');
+    
+            // Toggle LED state
+            if (ledButton.classList.contains('led-off')) {
+                ledButton.classList.remove('led-off');
+                ledButton.classList.add('led-on');
+                ledIndicator.classList.add('led-indicator-on'); // Add animation
+            } else {
+                ledButton.classList.remove('led-on');
+                ledButton.classList.add('led-off');
+                ledIndicator.classList.remove('led-indicator-on'); // Remove animation
+            }
+        }
+    
+        function updateStatus() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/status", true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    document.getElementById("button1").innerHTML = '<span class="status-icon">' + (data.button1 ? '🔵' : '⬤') + '</span>Button 1: <span class="led-state">' + (data.button1 ? 'Pressed' : 'Released') + '</span>';
+                    document.getElementById("button2").innerHTML = '<span class="status-icon">' + (data.button2 ? '🔵' : '⬤') + '</span>Button 2: <span class="led-state">' + (data.button2 ? 'Pressed' : 'Released') + '</span>';
+                    document.getElementById("led1").innerHTML = '<span class="status-icon">' + (data.led1 ? '🟢' : '🔴') + '</span>LED 1: <span class="led-state">' + (data.led1 ? 'ON' : 'OFF') + '</span>';
+                    document.getElementById("led2").innerHTML = '<span class="status-icon">' + (data.led2 ? '🟢' : '🔴') + '</span>LED 2: <span class="led-state">' + (data.led2 ? 'ON' : 'OFF') + '</span>';
+                } else {
+                    console.error('Error fetching status: ' + xhr.status);
+                }
+            };
+            xhr.send();
+        }
+    
+        function sendInitialLEDStates() {
+            var ledStates = [];
+            
+            // Check the current states of the LEDs and send them to the server
+            for (let led = 1; led <= 2; led++) { // Assuming you have two LEDs, adjust as necessary
+                const ledButton = document.getElementById('led' + led + 'Button');
+                if (ledButton.classList.contains('led-on')) {
+                    ledStates.push(led);
+                }
+            }
+    
+            // Send the initial LED states
+            if (ledStates.length > 0) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", "/set_led?led=" + ledStates.join(','), true);
+                xhr.send();
+            }
+        }
+    
+        // Update status and send initial LED states on load
+        window.onload = function() {
+            updateStatus();
+            sendInitialLEDStates();
+        };
+    
+        setInterval(updateStatus, 500); // Update every half second
+    </script>
+    
+</body>
+</html>
